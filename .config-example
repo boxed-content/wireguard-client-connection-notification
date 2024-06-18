@@ -1,10 +1,10 @@
 [globals]
 ; Choose the notification channel.
 ; Possible values are:
-;   gotify
 ;   telegram
-;   both
-notification_channel=both
+;   gotify;   
+;   ntfy
+notification_channels=telegram,ntfy
 ; After X minutes the clients will be considered disconnected
 ; Choose a timeout greater then 5 minutes to limit many false positives
 timeout=5
@@ -19,3 +19,9 @@ token=type-your-bot-token
 gotify_host=https://your-host.ext
 gotify_app_token=your-app-token
 gotify_title=Wireguard Guardian
+
+[ntfy]
+ntfy_host=https://your-host.ext
+ntfy_token=your-token
+ntfy_title=Wireguard Guardian
+ntfy_tags=warning
