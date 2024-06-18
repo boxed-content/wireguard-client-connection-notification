@@ -35,14 +35,20 @@ if [ "" == "$WIREGUARD_CLIENTS" ]; then
 	exit 1
 fi
 
-readonly NOTIFICATION_CHANNEL=$(awk -F'=' '/^notification_channel=/ { print $2}' $1)
+readonly NOTIFICATION_CHANNELS=$(awk -F'=' '/^notification_channel=/ { print $2 }' $1)
+IFS=',' read -ra CHANNELS <<< "$NOTIFICATION_CHANNELS"
+
+readonly TELEGRAM_CHAT_ID=$(awk -F'=' '/^chat=/ { print $2}' $1)
+readonly TELEGRAM_TOKEN=$(awk -F'=' '/^token=/ { print $2}' $1)
 
 readonly GOTIFY_HOST=$(awk -F'=' '/^gotify_host=/ { print $2}' $1)
 readonly GOTIFY_APP_TOKEN=$(awk -F'=' '/^gotify_app_token=/ { print $2}' $1)
 readonly GOTIFY_TITLE=$(awk -F'=' '/^gotify_title=/ { print $2}' $1)
 
-readonly TELEGRAM_CHAT_ID=$(awk -F'=' '/^chat=/ { print $2}' $1)
-readonly TELEGRAM_TOKEN=$(awk -F'=' '/^token=/ { print $2}' $1)
+readonly NTFY_HOST=$(awk -F'=' '/^ntfy_host=/ { print $2}' $1)
+readonly NTFY_TOKEN=$(awk -F'=' '/^ntfy_token=/ { print $2}' $1)
+readonly NTFY_TITLE=$(awk -F'=' '/^ntfy_title=/ { print $2}' $1)
+readonly NTFY_TAGS=$(awk -F'=' '/^ntfy_tags=/ { print $2}' $1)
 
 while IFS= read -r LINE; do
 	public_key=$(awk '{ print $1 }' <<< "$LINE")
@@ -92,13 +98,24 @@ while IFS= read -r LINE; do
 	if [ "no" != "$send_notification" ]; then
 		printf "The client %s is %s\n" $client_name $send_notification
 		message="$client_name is $send_notification from ip address $remote_ip"
-    if [ "telegram" == "$NOTIFICATION_CHANNEL" ] || [ "both" == "$NOTIFICATION_CHANNEL" ]; then
-      curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" -F chat_id=$TELEGRAM_CHAT_ID -F text="🐉 Wireguard: \`$message\`" -F parse_mode="MarkdownV2" > /dev/null 2>&1
-    fi
-    if [ "gotify" == "$NOTIFICATION_CHANNEL" ] || [ "both" == "$NOTIFICATION_CHANNEL" ]; then
-      curl -X POST "${GOTIFY_HOST}/message" -H "accept: application/json" -H "Content-Type: application/json" -H "Authorization: Bearer ${GOTIFY_APP_TOKEN}" -d '{"message": "'"$message"'", "priority": 5, "title": "'"$GOTIFY_TITLE"'"}' > /dev/null 2>&1
-    fi
-  else
+
+		for CHANNEL in "${CHANNELS[@]}"; do
+			case "$CHANNEL" in
+				telegram)
+	     		curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" -F chat_id=$TELEGRAM_CHAT_ID -F text="🐉 Wireguard: \`$message\`" -F parse_mode="MarkdownV2" > /dev/null 2>&1
+					;;
+				gotify)
+	      	curl -X POST "${GOTIFY_HOST}/message" -H "accept: application/json" -H "Content-Type: application/json" -H "Authorization: Bearer ${GOTIFY_APP_TOKEN}" -d '{"message": "'"$message"'", "priority": 5, "title": "'"$GOTIFY_TITLE"'"}' > /dev/null 2>&1
+					;;
+				ntfy)
+					curl -H "Authorization: Bearer ${NTFY_TOKEN}" -H "Title: ${NTFY_TITLE}" -H "Tags: ${NTFY_TAGS}" -d $message ${NTFY_HOST} > /dev/null 2>&1
+				;;
+				*)
+					printf "Unknown notification channel: %s\n" "$CHANNEL"
+					;;
+			esac
+		done
+	else
 		printf "The client %s is %s, no notification will be sent.\n" $client_name $(cat $client_file)
 	fi
 
