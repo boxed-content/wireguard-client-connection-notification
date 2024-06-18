@@ -1,5 +1,5 @@
 # wireguard-client-connection-notification
-Send a message to Telegram or Gotify Server when a client is connected or disconnected from wireguard tunnel
+Send a message to Telegram, Gotify or ntfy when a client is connected or disconnected from wireguard tunnel
 
 ## How to use:
 - Clone this repo into your server with wireguard installed
