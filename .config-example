@@ -2,7 +2,7 @@
 ; Choose the notification channel.
 ; Possible values are:
 ;   telegram
-;   gotify;   
+;   gotify   
 ;   ntfy
 notification_channels=telegram,ntfy
 ; After X minutes the clients will be considered disconnected
